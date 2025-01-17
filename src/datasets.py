@@ -52,9 +52,13 @@ def data_preprocessing(df):
     outputs = torch.tensor(df[['p1_ind_norm', 'p2_ind_norm']].values, dtype=torch.float32)
     indices = torch.tensor([df['index'].values.tolist()], dtype=torch.int64).squeeze()
     subids = torch.tensor(df['subid'].values, dtype=torch.int64)
-    print(inputs.shape, outputs.shape, indices.shape, subids.shape)
+    lengths = torch.tensor(df['m_ind'].values, dtype=torch.int64)
+    print(inputs.shape, outputs.shape, indices.shape, subids.shape, lengths.shape)
 
-    return inputs, outputs, indices, subids
+    # reshape inputs to be in the format (batch_size, channels, sequence_length)
+    inputs = inputs.unsqueeze(1)
+
+    return inputs, outputs, indices, subids, lengths
 
 class StringDataset(Dataset):
     def __init__(self, array_of_strings):
@@ -87,23 +91,24 @@ class WaveformIndexDataModule(pl.LightningDataModule):
         self.generator = torch.Generator().manual_seed(self.seed)
         self.split_type = split_type
         self.subid_split = {'train': None, 'val': None, 'test': None}
+        self.data_split = False
         
     def prepare_data(self):
         # load the dataset
         df = pd.read_pickle(os.path.join(self.data_dir, self.data_fname))
         
         # preprocess the dataset to normalize the waveforms for input to the CNN
-        inputs, outputs, indices, subids = data_preprocessing(df)
+        inputs, outputs, indices, subids, lengths = data_preprocessing(df)
         
-        return inputs, outputs, indices, subids
+        return inputs, outputs, indices, subids, lengths
 
     def setup(self, stage=None):
         # Assign train, validation, and test datasets for use in dataloaders
-        if stage == 'fit' or stage is None:
-            inputs, outputs, indices, subids = self.prepare_data()
-            
+        print('Stage: ', stage)
+        if self.data_split is False and (stage == 'fit' or stage is None):
+            inputs, outputs, indices, subids, lengths = self.prepare_data()
             if self.split_type == 'cardiac_cycle':
-                dataset = TensorDataset(inputs, outputs, indices, subids)
+                dataset = TensorDataset(inputs, outputs, indices, subids, lengths)
                 self.train_data, self.val_data, self.test_data = random_split(dataset, [self.size['train'], self.size['val'], self.size['test']], generator=self.generator)
             elif self.split_type == 'subid':
                 # split the datasets according to subids to avoid data leakage
@@ -127,23 +132,30 @@ class WaveformIndexDataModule(pl.LightningDataModule):
                 outputs_train = outputs[inds_train]
                 indices_train = indices[inds_train]
                 subids_train = subids[inds_train]
-                self.train_data = TensorDataset(inputs_train, outputs_train, indices_train, subids_train)
+                lengths_train = lengths[inds_train]
+                self.train_data = TensorDataset(inputs_train, outputs_train, indices_train, subids_train, lengths_train)
                 
                 inputs_val = inputs[inds_val]
                 outputs_val = outputs[inds_val]
                 indices_val = indices[inds_val]
                 subids_val = subids[inds_val]
-                self.val_data = TensorDataset(inputs_val, outputs_val, indices_val, subids_val)
+                lengths_val = lengths[inds_val]
+                self.val_data = TensorDataset(inputs_val, outputs_val, indices_val, subids_val, lengths_val)
 
                 inputs_test = inputs[inds_test]
                 outputs_test = outputs[inds_test]
                 indices_test = indices[inds_test]
                 subids_test = subids[inds_test]
-                self.test_data = TensorDataset(inputs_test, outputs_test, indices_test, subids_test)
+                lengths_test = lengths[inds_test]
+                self.test_data = TensorDataset(inputs_test, outputs_test, indices_test, subids_test, lengths_test)
             else:
                 print("unknown split type")
 
-            print('Train:', len(self.train_data), 'Val:', len(self.val_data), 'Test:', len(self.test_data))
+            # change split flag
+            self.data_split = True
+        else:
+            print('Data already split.')
+        print('Train:', len(self.train_data), 'Val:', len(self.val_data), 'Test:', len(self.test_data))
 
 
     def train_dataloader(self):
@@ -172,3 +184,6 @@ class WaveformIndexDataModule(pl.LightningDataModule):
                           num_workers=self.num_workers,
                           persistent_workers=self.num_workers > 0
                           )
+    
+    def return_subid_split(self):
+        return self.subid_split
