@@ -7,9 +7,9 @@ class CNN(nn.Module):
     """
 
     def __init__(self,
-                 input_dim: int = 1000,
+                 input_dim: int = 1,
                  output_dim: int = 2,
-                 layer_dims: list = [256, 128, 64],
+                 layer_dims: list = [16, 32, 64],
                  kernel_dim: int = 3,
                  stride: int = 1,
                  padding: int = 1,
@@ -30,48 +30,53 @@ class CNN(nn.Module):
         # Define the activation function
         if self.activation_type == 'relu':
             self.activation = nn.ReLU()
-        elif self.activation_type == 'tanh':
-            self.activation = nn.Tanh()
-        elif self.activation_type == 'sigmoid':
-            self.activation = nn.Sigmoid()
         else:
             raise ValueError('Activation type not supported.')
         
-        # Define the convolutional layers
+        # convolutional block 1
         self.conv1 = nn.Conv1d(input_dim, layer_dims[0], kernel_size=kernel_dim, stride=stride, padding=padding)
-        self.bn1 = nn.BatchNorm1d(layer_dims[0])
-        self.conv2 = nn.Conv1d(layer_dims[0], layer_dims[1], kernel_size=kernel_dim,stride=stride, padding=padding)
-        self.bn2 = nn.BatchNorm1d(layer_dims[1])
-        self.conv3 = nn.Conv1d(layer_dims[1], layer_dims[2], kernel_size=kernel_dim,stride=stride, padding=padding)
-        self.bn3 = nn.BatchNorm1d(layer_dims[2])
+        self.relu1 = nn.ReLU()
+        self.pool1 = nn.MaxPool1d(kernel_size=2, stride=2)
 
-        # Define the fully connected layers
-        self.fc1 = nn.Linear(layer_dims[2], output_dim)
+        # convolutional block 2
+        self.conv2 = nn.Conv1d(layer_dims[0], layer_dims[1], kernel_size=kernel_dim, stride=stride, padding=padding)
+        self.relu2 = nn.ReLU()
+        self.pool2 = nn.MaxPool1d(kernel_size=2, stride=2)
 
-        # Define the dropout layer
-        self.dropout = nn.Dropout(dropout)
+        # convolutional block 3
+        self.conv3 = nn.Conv1d(layer_dims[1], layer_dims[2], kernel_size=kernel_dim, stride=stride, padding=padding)
+        self.relu3 = nn.ReLU()
+        self.pool3 = nn.MaxPool1d(kernel_size=2, stride=2)
+
+        # fully connected layers
+        self.fc1 = nn.Linear(layer_dims[2] * (1000 // (2**3)), 128)
+        self.relu_fc1 = nn.ReLU()
+        self.fc2 = nn.Linear(128, output_dim)
 
     def forward(self, x):
-        # Convolutional layers
+
+        # Convolutional block 1
         x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.activation(x)
-        x = self.dropout(x)
-
+        x = self.relu1(x)
+        x = self.pool1(x)
+        
+        # Convolutional block 2
         x = self.conv2(x)
-        x = self.bn2(x)
-        x = self.activation(x)
-        x = self.dropout(x)
-
+        x = self.relu2(x)
+        x = self.pool2(x)
+        
+        # Convolutional block 3
         x = self.conv3(x)
-        x = self.bn3(x)
-        x = self.activation(x)
-        x = self.dropout(x)
-
+        x = self.relu3(x)
+        x = self.pool3(x)
+        
         # Flatten the output
-        x = x.view(x.size(0), -1)
-
-        # Fully connected layer
+        x = x.view(x.size(0), -1)  # [batch_size, 64 * 125]
+        
+        # Fully connected layers
         x = self.fc1(x)
+        x = self.relu_fc1(x)
+        x = self.fc2(x)
+
 
         return x
