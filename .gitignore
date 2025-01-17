@@ -1,2 +1,7 @@
 data
 .history
+.DS_Store
+
+src/df_prep.py
+src/test_script.py
+src/__pycache__/
