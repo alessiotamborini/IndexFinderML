@@ -141,9 +141,6 @@ def data_preprocessing_with_derivatives(df):
     calib_wvf = torch.nn.utils.rnn.pad_sequence([torch.tensor(x, dtype=torch.float32) for x in df['wvf_calib'].values], padding_value=torch.nan, batch_first=True)
     print(inputs.size(), outputs.size(), indices.size(), subids.size(), lengths.size(), calib_wvf.size())
 
-    # reshape inputs to be in the format (batch_size, channels, sequence_length)
-    inputs = inputs.unsqueeze(1)
-
     return inputs, outputs, indices, subids, lengths, calib_wvf
 
 class StringDataset(Dataset):

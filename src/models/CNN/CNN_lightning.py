@@ -12,7 +12,7 @@ from models.CNN.CNN_pytorch import CNN
 class CNNModule(pl.LightningModule):
     def __init__(self, 
                 input_dim: int = 1000,
-                output_dim: int = 2,
+                output_dim: int = 3,
                 layer_dims: list = [256, 128, 64],
                 kernel_dim: int = 3,
                 stride: int = 1,
@@ -137,8 +137,7 @@ class CNNModule(pl.LightningModule):
         all_y_hat = torch.stack(all_y_hat)
         all_lengths = torch.stack(all_lengths)
         all_wvfs = torch.stack(all_wvfs)
-        print(all_x.shape, all_y.shape, all_y_hat.shape, all_lengths.shape, all_wvfs.shape)
-
+        
         # calculate mse
         mse = F.mse_loss(all_y, all_y_hat)
 

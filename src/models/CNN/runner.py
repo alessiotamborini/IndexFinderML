@@ -12,6 +12,7 @@ class Runner:
     def __init__(
             self,
             project_name: str = 'fiducial-points',
+            model_name: str = 'CNN',
             # data hyperparameters
             data_dir: str = 'data/',
             data_fname: str = 'wvfIndexData.pkl',
@@ -21,7 +22,7 @@ class Runner:
             split_type: str = 'subid',
             num_workers: int = 1,
             # model hyperparameters
-            input_dim: int = 1000,
+            input_dim: int = 1,
             output_dim: int = 3,
             layer_dims: list = [16, 32, 64],
             kernel_dim: int = 3,
@@ -44,6 +45,7 @@ class Runner:
         seed_everything(seed, workers=True)
 
         self.project_name = project_name
+        self.model_name = model_name
 
         self.data_hyperparameters = {
             'data_dir': data_dir,
@@ -85,7 +87,7 @@ class Runner:
 
     def run(self):
         # initialize the logger
-        wandb.init(project=self.project_name)
+        wandb.init(project=self.project_name, name=self.model_name)
         wandb.config.update(self.data_hyperparameters)
         wandb.config.update(self.model_hyperparameters)
         wandb.config.update(self.trainer_hyperparameters)

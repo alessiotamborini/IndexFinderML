@@ -3,12 +3,13 @@ import torch.nn as nn
 
 class CNN(nn.Module):
     """
-    A convolutional neural network model.
+    A convolutional neural network model for the prediction 
+    of the index of a normalized waveform. 
     """
 
     def __init__(self,
                  input_dim: int = 1,
-                 output_dim: int = 2,
+                 output_dim: int = 3,
                  layer_dims: list = [16, 32, 64],
                  kernel_dim: int = 3,
                  stride: int = 1,

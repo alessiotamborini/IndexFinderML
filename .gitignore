@@ -8,6 +8,9 @@ src/__pycache__/
 src/utils/__pycache__/
 
 src/models/CNN/__pycache__/
+src/models/mcCNN/__pycache__/
 
 src/run_scripts/test_CNN/checkpoints
 src/run_scripts/test_CNN/wandb
+src/run_scripts/test_mcCNN/checkpoints
+src/run_scripts/test_mcCNN/wandb
