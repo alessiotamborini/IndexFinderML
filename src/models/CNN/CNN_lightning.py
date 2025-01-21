@@ -53,21 +53,21 @@ class CNNModule(pl.LightningModule):
         return loss
 
     def training_step(self, batch, batch_idx):
-        x, y, index, subid, lengths = batch
+        x, y, index, subid, lengths, wvfs = batch
         y_hat = self.model(x)
         loss = self.custom_loss(y_hat, y)
         self.losses['train'].append(loss.item())
         return loss
     
     def validation_step(self, batch, batch_idx):
-        x, y, index, subid, lengths = batch
+        x, y, index, subid, lengths, wvfs = batch
         y_hat = self.model(x)
         loss = self.custom_loss(y_hat, y)
         self.losses['val'].append(loss.item())
         return loss
     
     def test_step(self, batch, batch_idx):
-        x, y, index, subid, lengths = batch
+        x, y, index, subid, lengths, wvfs = batch
         y_hat = self.model(x)
         loss = self.custom_loss(y_hat, y)
         self.losses['test'].append(loss.item())
@@ -116,9 +116,9 @@ class CNNModule(pl.LightningModule):
         self.make_prediction_accuracy_plots(paramlist, 'val')
     
     def calculate_metrics(self, dataloader):
-        all_x, all_y, all_y_hat, all_lengths = [],[],[],[]
+        all_x, all_y, all_y_hat, all_lengths, all_wvfs = [],[],[],[],[]
         for batch in dataloader:
-            x, y, index, subid, lengths = batch
+            x, y, index, subid, lengths, wvfs = batch
             x, y, lengths = x.to(self.device), y.to(self.device), lengths.to(self.device)
             
             # get the predictions
@@ -129,18 +129,21 @@ class CNNModule(pl.LightningModule):
             all_y.extend(y)
             all_y_hat.extend(y_hat)
             all_lengths.extend(lengths)
+            all_wvfs.extend(wvfs)
 
         # convert the lists to tensors
         all_x = torch.stack(all_x)
         all_y = torch.stack(all_y)
         all_y_hat = torch.stack(all_y_hat)
         all_lengths = torch.stack(all_lengths)
+        all_wvfs = torch.stack(all_wvfs)
+        print(all_x.shape, all_y.shape, all_y_hat.shape, all_lengths.shape, all_wvfs.shape)
 
         # calculate mse
         mse = F.mse_loss(all_y, all_y_hat)
 
         # calculate physio params
-        paramlist = self.calculate_physio_params(all_x, all_y, all_y_hat, all_lengths)
+        paramlist = self.calculate_physio_params(all_wvfs, all_y, all_y_hat, all_lengths)
         
         return all_x, all_y, all_y_hat, paramlist
         
@@ -165,17 +168,36 @@ class CNNModule(pl.LightningModule):
         # calculate the augmentation index (AIX)
         all_aix_true, all_aix_pred = [],[]
         for x, p1t, p2t, p1p, p2p in zip(all_x, true_p1, true_p2, pred_p1, pred_p2):
-            aix_true = 100*(x[0][p2t] - x[0][p1t]) / x[0].ptp()
-            aix_pred = 100*(x[0][p2p] - x[0][p1p]) / x[0].ptp()
+            x = x[~np.isnan(x)]
+            aix_true = 100*(x[p2t] - x[p1t]) / x.ptp()
+            aix_pred = 100*(x[p2p] - x[p1p]) / x.ptp()
             all_aix_true.append(aix_true)
             all_aix_pred.append(aix_pred)
 
+        # calculate the spti parameter
+        all_spti_true, all_spti_pred = [],[]
+        for x, n_ind_t, n_ind_p in zip(all_x, true_n, pred_n):
+            spti_true = x[:n_ind_t].sum() / 1000
+            spti_pred = x[:n_ind_p].sum() / 1000
+            all_spti_true.append(spti_true)
+            all_spti_pred.append(spti_pred)
+
+        # calculate the end systolic pressure (ESP)
+        all_esp_true, all_esp_pred = [],[]
+        for x, n_ind_t, n_ind_p in zip(all_x, true_n, pred_n):
+            esp_true = x[n_ind_t]
+            esp_pred = x[n_ind_p]
+            all_esp_true.append(esp_true)
+            all_esp_pred.append(esp_pred)
+
         # combine a parameter list
         paramlist = [
+            [np.array(true_p1), np.array(pred_p1), 'p1_ind'],
+            [np.array(true_p2), np.array(pred_p2), 'p2_ind'],   
+            [np.array(true_n), np.array(pred_n), 'n_ind'],
             [np.array(all_aix_true), np.array(all_aix_pred), 'AIX'],
-            [np.array(true_p1), np.array(pred_p1), 'P1'],
-            [np.array(true_p2), np.array(pred_p2), 'P2'],   
-            [np.array(true_n), np.array(pred_n), 'N'],
+            [np.array(all_spti_true), np.array(all_spti_pred), 'SPTI'],
+            [np.array(all_esp_true), np.array(all_esp_pred), 'ESP'],
         ]
 
         return paramlist
@@ -207,7 +229,7 @@ class CNNModule(pl.LightningModule):
         
         num_params = len(paramlist)
         # log metrics for the parameter pairs
-        fig = plt.figure(figsize=(10, 10))
+        fig = plt.figure(figsize=(3*num_params, 8))
         gs = fig.add_gridspec(1, num_params)
         
         for i in range(num_params):
