@@ -21,6 +21,7 @@ class Runner:
             seed: int = 3,
             split_type: str = 'subid',
             num_workers: int = 1,
+            channels_present: bool = True,
             # model hyperparameters
             input_dim: int = 1,
             output_dim: int = 3,
@@ -55,6 +56,7 @@ class Runner:
             'seed': seed,
             'split_type': split_type,
             'num_workers': num_workers,
+            'channels_present': channels_present,
         }
 
         self.model_hyperparameters = {

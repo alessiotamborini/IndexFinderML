@@ -11,7 +11,7 @@ from models.CNN.CNN_pytorch import CNN
 
 class CNNModule(pl.LightningModule):
     def __init__(self, 
-                input_dim: int = 1000,
+                input_dim: int = 1,
                 output_dim: int = 3,
                 layer_dims: list = [256, 128, 64],
                 kernel_dim: int = 3,

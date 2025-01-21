@@ -70,9 +70,6 @@ def data_preprocessing(df):
     calib_wvf = torch.nn.utils.rnn.pad_sequence([torch.tensor(x, dtype=torch.float32) for x in df['wvf_calib'].values], padding_value=torch.nan, batch_first=True)
     print(inputs.size(), outputs.size(), indices.size(), subids.size(), lengths.size(), calib_wvf.size())
 
-    # reshape inputs to be in the format (batch_size, channels, sequence_length)
-    inputs = inputs.unsqueeze(1)
-
     return inputs, outputs, indices, subids, lengths, calib_wvf
 
 def data_preprocessing_with_derivatives(df):
@@ -162,6 +159,7 @@ class WaveformIndexDataModule(pl.LightningDataModule):
                  num_workers: int = 1,
                  seed: int = 3,
                  split_type: str = 'subid',
+                 channels_present: bool = False,
                 ):
                  
         super().__init__()
@@ -175,6 +173,7 @@ class WaveformIndexDataModule(pl.LightningDataModule):
         self.split_type = split_type
         self.subid_split = {'train': None, 'val': None, 'test': None}
         self.data_split = False
+        self.channels_present = channels_present
         
     def prepare_data(self):
         # load the dataset
@@ -182,6 +181,11 @@ class WaveformIndexDataModule(pl.LightningDataModule):
         
         # preprocess the dataset to normalize the waveforms for input to the CNN
         inputs, outputs, indices, subids, lengths, calib_wvfs = data_preprocessing(df)
+
+        # format the inputs data
+        if self.channels_present:
+            # reshape inputs to be in the format (batch_size, channels, sequence_length)
+            inputs = inputs.unsqueeze(1)
         
         return inputs, outputs, indices, subids, lengths, calib_wvfs
 
