@@ -17,11 +17,12 @@ def data_preprocessing(df):
         2. output labels to be in the range [0, 1]
     """
 
-    # normalize the waveforms lengths to 1000
-    df['wvf_norm'] = df.apply(lambda x: resample(x['wvf'], 1000), axis=1)
-    
-    # normalize the waveforms to have zero mean and unit variance
-    df['wvf_norm'] = df['wvf_norm'].apply(lambda x: (x - np.mean(x)) / np.std(x))
+    # normalize the waveforms
+    df['wvf_norm'] = df.apply(lambda x: resample(x['wvf'], 1000), axis=1)               # normalize length to 1000
+    df['wvf_norm'] = df['wvf_norm'].apply(lambda x: (x - np.mean(x)) / np.std(x))       # normalize amplitude to zero mean and unit variance
+
+    # calibrate waveforms to have amplitude in the [DBP, SBP] range
+    df['wvf_calib'] = df.apply(lambda x: (x['sbp']-x['dbp']) * (x['wvf']-x['wvf'].min()) / (x['wvf'].ptp()) + x['dbp'], axis=1)
 
     # normalize the labels to be in the range [0, 1]
     df['p1_ind_norm'] = df['p1_ind'].div(df['m_ind'])
@@ -35,7 +36,7 @@ def data_preprocessing(df):
     # # Debugging - plot an example waveform
     # print('mean:', np.mean(df['wvf_norm'].iloc[0]), 'std:', np.std(df['wvf_norm'].iloc[0]))
     # from matplotlib import pyplot as plt
-    # fig, ax = plt.subplots(1, 2, figsize=(12,6))
+    # fig, ax = plt.subplots(1, 3, figsize=(12,6))
     # ax[0].plot(df['wvf'].iloc[0])
     # ax[0].axvline(df['p1_ind'].iloc[0], color='r', linestyle='--')
     # ax[0].axvline(df['p2_ind'].iloc[0], color='k', linestyle='--')
@@ -46,6 +47,11 @@ def data_preprocessing(df):
     # ax[1].axvline(df['p2_ind_norm'].iloc[0], color='k', linestyle='--')
     # ax[1].axvline(df['n_ind_norm'].iloc[0], color='k', linestyle='--')
     # ax[1].set_title('Normalized Waveform')
+    # ax[2].plot(df['wvf_calib'].iloc[0])
+    # ax[2].axvline(df['p1_ind'].iloc[0], color='r', linestyle='--')
+    # ax[2].axvline(df['p2_ind'].iloc[0], color='k', linestyle='--')
+    # ax[2].axvline(df['n_ind'].iloc[0], color='k', linestyle='--')
+    # ax[2].set_title('Calibrated Waveform')
     # plt.tight_layout()
     # plt.show()
 
@@ -55,12 +61,15 @@ def data_preprocessing(df):
     indices = torch.tensor([df['index'].values.tolist()], dtype=torch.int64).squeeze()
     subids = torch.tensor(df['subid'].values, dtype=torch.int64)
     lengths = torch.tensor(df['m_ind'].values, dtype=torch.int64)
-    print(inputs.shape, outputs.shape, indices.shape, subids.shape, lengths.shape)
+    
+    # create a padded tensor for the calibrated waveforms
+    calib_wvf = torch.nn.utils.rnn.pad_sequence([torch.tensor(x, dtype=torch.float32) for x in df['wvf_calib'].values], padding_value=torch.nan, batch_first=True)
+    print(inputs.size(), outputs.size(), indices.size(), subids.size(), lengths.size(), calib_wvf.size())
 
     # reshape inputs to be in the format (batch_size, channels, sequence_length)
     inputs = inputs.unsqueeze(1)
 
-    return inputs, outputs, indices, subids, lengths
+    return inputs, outputs, indices, subids, lengths, calib_wvf
 
 class StringDataset(Dataset):
     def __init__(self, array_of_strings):
@@ -100,17 +109,17 @@ class WaveformIndexDataModule(pl.LightningDataModule):
         df = pd.read_pickle(os.path.join(self.data_dir, self.data_fname))
         
         # preprocess the dataset to normalize the waveforms for input to the CNN
-        inputs, outputs, indices, subids, lengths = data_preprocessing(df)
+        inputs, outputs, indices, subids, lengths, calib_wvfs = data_preprocessing(df)
         
-        return inputs, outputs, indices, subids, lengths
+        return inputs, outputs, indices, subids, lengths, calib_wvfs
 
     def setup(self, stage=None):
         # Assign train, validation, and test datasets for use in dataloaders
         print('Stage: ', stage)
         if self.data_split is False and (stage == 'fit' or stage is None):
-            inputs, outputs, indices, subids, lengths = self.prepare_data()
+            inputs, outputs, indices, subids, lengths, wvfs = self.prepare_data()
             if self.split_type == 'cardiac_cycle':
-                dataset = TensorDataset(inputs, outputs, indices, subids, lengths)
+                dataset = TensorDataset(inputs, outputs, indices, subids, lengths, wvfs)
                 self.train_data, self.val_data, self.test_data = random_split(dataset, [self.size['train'], self.size['val'], self.size['test']], generator=self.generator)
             elif self.split_type == 'subid':
                 # split the datasets according to subids to avoid data leakage
@@ -135,21 +144,24 @@ class WaveformIndexDataModule(pl.LightningDataModule):
                 indices_train = indices[inds_train]
                 subids_train = subids[inds_train]
                 lengths_train = lengths[inds_train]
-                self.train_data = TensorDataset(inputs_train, outputs_train, indices_train, subids_train, lengths_train)
+                wvfs_train = wvfs[inds_train]
+                self.train_data = TensorDataset(inputs_train, outputs_train, indices_train, subids_train, lengths_train, wvfs_train)
                 
                 inputs_val = inputs[inds_val]
                 outputs_val = outputs[inds_val]
                 indices_val = indices[inds_val]
                 subids_val = subids[inds_val]
                 lengths_val = lengths[inds_val]
-                self.val_data = TensorDataset(inputs_val, outputs_val, indices_val, subids_val, lengths_val)
+                wvfs_val = wvfs[inds_val]
+                self.val_data = TensorDataset(inputs_val, outputs_val, indices_val, subids_val, lengths_val, wvfs_val)
 
                 inputs_test = inputs[inds_test]
                 outputs_test = outputs[inds_test]
                 indices_test = indices[inds_test]
                 subids_test = subids[inds_test]
                 lengths_test = lengths[inds_test]
-                self.test_data = TensorDataset(inputs_test, outputs_test, indices_test, subids_test, lengths_test)
+                wvfs_test = wvfs[inds_test]
+                self.test_data = TensorDataset(inputs_test, outputs_test, indices_test, subids_test, lengths_test, wvfs_test)
             else:
                 print("unknown split type")
 
