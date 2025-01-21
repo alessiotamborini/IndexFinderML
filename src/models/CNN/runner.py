@@ -22,8 +22,8 @@ class Runner:
             num_workers: int = 1,
             # model hyperparameters
             input_dim: int = 1000,
-            output_dim: int = 2,
-            layer_dims: list = [256, 128, 64],
+            output_dim: int = 3,
+            layer_dims: list = [16, 32, 64],
             kernel_dim: int = 3,
             stride: int = 1,
             padding: int = 1,

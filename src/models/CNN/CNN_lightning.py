@@ -48,24 +48,28 @@ class CNNModule(pl.LightningModule):
     def forward(self, x):
         return self.model(x)
     
+    def custom_loss(self, y_hat, y):
+        loss = F.mse_loss(y_hat, y)
+        return loss
+
     def training_step(self, batch, batch_idx):
         x, y, index, subid, lengths = batch
         y_hat = self.model(x)
-        loss = F.mse_loss(y_hat, y)
+        loss = self.custom_loss(y_hat, y)
         self.losses['train'].append(loss.item())
         return loss
     
     def validation_step(self, batch, batch_idx):
         x, y, index, subid, lengths = batch
         y_hat = self.model(x)
-        loss = F.mse_loss(y_hat, y)
+        loss = self.custom_loss(y_hat, y)
         self.losses['val'].append(loss.item())
         return loss
     
     def test_step(self, batch, batch_idx):
         x, y, index, subid, lengths = batch
         y_hat = self.model(x)
-        loss = F.mse_loss(y_hat, y)
+        loss = self.custom_loss(y_hat, y)
         self.losses['test'].append(loss.item())
         return loss
     
@@ -147,16 +151,18 @@ class CNNModule(pl.LightningModule):
         all_y = all_y.cpu().detach().numpy()
         all_y_hat = all_y_hat.cpu().detach().numpy()
         all_lengths = all_lengths.cpu().detach().numpy()
-        true_p1, true_p2 = all_y[:, 0], all_y[:, 1]
-        pred_p1, pred_p2 = all_y_hat[:, 0], all_y_hat[:, 1]
+        true_p1, true_p2, true_n = all_y[:, 0], all_y[:, 1], all_y[:, 2]
+        pred_p1, pred_p2, pred_n = all_y_hat[:, 0], all_y_hat[:, 1], all_y_hat[:, 2]
 
         # convert the percentage units to index units
         true_p1 = (true_p1 * all_lengths).astype(int)
         true_p2 = (true_p2 * all_lengths).astype(int)
+        true_n = (true_n * all_lengths).astype(int)
         pred_p1 = (pred_p1 * all_lengths).astype(int)
         pred_p2 = (pred_p2 * all_lengths).astype(int)
+        pred_n = (pred_n * all_lengths).astype(int)
 
-        # calculate the absolute index error
+        # calculate the augmentation index (AIX)
         all_aix_true, all_aix_pred = [],[]
         for x, p1t, p2t, p1p, p2p in zip(all_x, true_p1, true_p2, pred_p1, pred_p2):
             aix_true = 100*(x[0][p2t] - x[0][p1t]) / x[0].ptp()
@@ -169,6 +175,7 @@ class CNNModule(pl.LightningModule):
             [np.array(all_aix_true), np.array(all_aix_pred), 'AIX'],
             [np.array(true_p1), np.array(pred_p1), 'P1'],
             [np.array(true_p2), np.array(pred_p2), 'P2'],   
+            [np.array(true_n), np.array(pred_n), 'N'],
         ]
 
         return paramlist
@@ -185,10 +192,12 @@ class CNNModule(pl.LightningModule):
         fig, axes = plt.subplots(2, 5, figsize=(15, 6))
         for ax, xs, ys, y_hat in zip(axes.ravel(), xs, ys, ys_hat):
             ax.plot(np.linspace(0, 1, len(xs.squeeze())), xs.squeeze())
-            ax.axvline(ys[0], color='r', linestyle='-', alpha=0.5)
-            ax.axvline(ys[1], color='k', linestyle='-', alpha=0.5)
+            ax.axvline(ys[0], color='r', linestyle='-', alpha=0.5, label='P1')
+            ax.axvline(ys[1], color='k', linestyle='-', alpha=0.5, label='P2')
+            ax.axvline(ys[2], color='g', linestyle='-', alpha=0.5, label='N')
             ax.axvline(y_hat[0], color='r', linestyle='--')
             ax.axvline(y_hat[1], color='k', linestyle='--')
+            ax.axvline(y_hat[2], color='g', linestyle='--')
         
         plt.tight_layout()
         wandb.log({f"params/{stage}/index_wvf_plot": wandb.Image(fig)})
@@ -196,13 +205,12 @@ class CNNModule(pl.LightningModule):
         
     def make_prediction_accuracy_plots(self, paramlist, stage):
         
-        
-        
+        num_params = len(paramlist)
         # log metrics for the parameter pairs
         fig = plt.figure(figsize=(10, 10))
-        gs = fig.add_gridspec(1, 3)
+        gs = fig.add_gridspec(1, num_params)
         
-        for i in range(3):
+        for i in range(num_params):
             true, pred, name = paramlist[i]
             
             # create the true-vs-pred and bland-altman plots

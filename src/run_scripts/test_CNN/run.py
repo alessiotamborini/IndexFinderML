@@ -18,7 +18,7 @@ def main():
     parser.add_argument('--num_workers', type=int, default=9, help='Number of workers for the dataloaders.')
     # model hyperparameters
     parser.add_argument('--input_dim', type=int, default=1, help='Input dimension of the data.')
-    parser.add_argument('--output_dim', type=int, default=2, help='Output dimension of the data.')
+    parser.add_argument('--output_dim', type=int, default=3, help='Output dimension of the data.')
     parser.add_argument('--layer_dims', type=list, default=[16, 32, 64], help='Dimensions of the layers in the model.')
     parser.add_argument('--kernel_dim', type=int, default=3, help='Kernel dimension for the convolutional layers.')
     parser.add_argument('--stride', type=int, default=1, help='Stride for the convolutional layers.')
