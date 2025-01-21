@@ -39,17 +39,19 @@ def data_preprocessing(df):
     # ax[0].plot(df['wvf'].iloc[0])
     # ax[0].axvline(df['p1_ind'].iloc[0], color='r', linestyle='--')
     # ax[0].axvline(df['p2_ind'].iloc[0], color='k', linestyle='--')
+    # ax[0].axvline(df['n_ind'].iloc[0], color='k', linestyle='--')
     # ax[0].set_title('Base Waveform')
     # ax[1].plot(np.linspace(0, 1, 1000), df['wvf_norm'].iloc[0])
     # ax[1].axvline(df['p1_ind_norm'].iloc[0], color='r', linestyle='--')
     # ax[1].axvline(df['p2_ind_norm'].iloc[0], color='k', linestyle='--')
+    # ax[1].axvline(df['n_ind_norm'].iloc[0], color='k', linestyle='--')
     # ax[1].set_title('Normalized Waveform')
     # plt.tight_layout()
     # plt.show()
 
     # convert structures to Tensor
     inputs = torch.tensor([list(x) for x in df['wvf_norm'].values], dtype=torch.float32)
-    outputs = torch.tensor(df[['p1_ind_norm', 'p2_ind_norm']].values, dtype=torch.float32)
+    outputs = torch.tensor(df[['p1_ind_norm', 'p2_ind_norm', 'n_ind_norm']].values, dtype=torch.float32)
     indices = torch.tensor([df['index'].values.tolist()], dtype=torch.int64).squeeze()
     subids = torch.tensor(df['subid'].values, dtype=torch.int64)
     lengths = torch.tensor(df['m_ind'].values, dtype=torch.int64)
@@ -156,7 +158,6 @@ class WaveformIndexDataModule(pl.LightningDataModule):
         else:
             print('Data already split.')
         print('Train:', len(self.train_data), 'Val:', len(self.val_data), 'Test:', len(self.test_data))
-
 
     def train_dataloader(self):
         return DataLoader(self.train_data, 
