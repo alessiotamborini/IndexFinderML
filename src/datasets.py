@@ -1,6 +1,7 @@
 import os
 
 import torch
+import random
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
@@ -160,6 +161,8 @@ class WaveformIndexDataModule(pl.LightningDataModule):
                  seed: int = 3,
                  split_type: str = 'subid',
                  channels_present: bool = False,
+                 train_proportion: float = 1.0, # this flag is used to select a subset of the train population for training
+                 train_proportion_seed: int = None,
                 ):
                  
         super().__init__()
@@ -174,6 +177,8 @@ class WaveformIndexDataModule(pl.LightningDataModule):
         self.subid_split = {'train': None, 'val': None, 'test': None}
         self.data_split = False
         self.channels_present = channels_present
+        self.train_proportion = train_proportion
+        self.train_proportion_seed = seed if train_proportion_seed is None else train_proportion_seed
         
     def prepare_data(self):
         # load the dataset
@@ -204,6 +209,12 @@ class WaveformIndexDataModule(pl.LightningDataModule):
                 train_subids = unique_subids[train_.indices]
                 val_subids = unique_subids[val_.indices]
                 test_subids = unique_subids[test_.indices]
+
+                # select a random subset of the train population for training
+                if self.train_proportion < 1.0:
+                    random.seed(self.train_proportion_seed)
+                    idx = random.sample(range(len(train_subids)), int(self.train_proportion*len(train_subids)))
+                    train_subids = train_subids[idx]
                 
                 # store the subid split for later use
                 self.subid_split['train'] = train_subids
@@ -286,6 +297,8 @@ class WaveformIndexDataModule_wDerivatives(pl.LightningDataModule):
                  num_workers: int = 1,
                  seed: int = 3,
                  split_type: str = 'subid',
+                 train_proportion: float = 1.0, # this flag is used to select a subset of the train population for training
+                 train_proportion_seed: int = None,
                 ):
                  
         super().__init__()
@@ -299,6 +312,8 @@ class WaveformIndexDataModule_wDerivatives(pl.LightningDataModule):
         self.split_type = split_type
         self.subid_split = {'train': None, 'val': None, 'test': None}
         self.data_split = False
+        self.train_proportion = train_proportion
+        self.train_proportion_seed = seed if train_proportion_seed is None else train_proportion_seed
         
     def prepare_data(self):
         # load the dataset
@@ -324,6 +339,12 @@ class WaveformIndexDataModule_wDerivatives(pl.LightningDataModule):
                 train_subids = unique_subids[train_.indices]
                 val_subids = unique_subids[val_.indices]
                 test_subids = unique_subids[test_.indices]
+
+                # select a random subset of the train population for training
+                if self.train_proportion < 1.0:
+                    random.seed(self.train_proportion_seed)
+                    idx = random.sample(range(len(train_subids)), int(self.train_proportion*len(train_subids)))
+                    train_subids = train_subids[idx]
                 
                 # store the subid split for later use
                 self.subid_split['train'] = train_subids
