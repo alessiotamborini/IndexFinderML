@@ -14,9 +14,13 @@ src/models/fNN/__pycache__/
 
 src/run_scripts/test_CNN/checkpoints
 src/run_scripts/test_CNN/wandb
+src/run_scripts/test_CNN/save
 src/run_scripts/test_mcCNN/checkpoints
 src/run_scripts/test_mcCNN/wandb
+src/run_scripts/test_mcCNN/save
 src/run_scripts/test_MLP/checkpoints
 src/run_scripts/test_MLP/wandb
+src/run_scripts/test_MLP/save
 src/run_scripts/test_fNN/checkpoints
 src/run_scripts/test_fNN/wandb
+src/run_scripts/test_fNN/save
