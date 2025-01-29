@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn.functional as F
 import pytorch_lightning as pl
@@ -22,6 +23,7 @@ class CNNModule(pl.LightningModule):
                 lr: float = 1e-3,
                 monitor_metric: str = 'loss/val/mse',
                 seed: int = 3,
+                save_path: str = './save',
                 **kwargs
                 ):
         super(CNNModule, self).__init__()
@@ -43,7 +45,12 @@ class CNNModule(pl.LightningModule):
         self.learning_rate = lr
         self.monitor_metric = monitor_metric
         self.losses = {'train': [], 'val': [], 'test': []}
-        self.kwargs = kwargs    
+        self.kwargs = kwargs
+
+        # save path for model
+        self.save_path = save_path
+        if not os.path.exists(self.save_path):
+            os.makedirs(self.save_path)
     
     def forward(self, x):
         return self.model(x)
@@ -100,23 +107,26 @@ class CNNModule(pl.LightningModule):
         self.log('loss/test/mse', torch.mean(torch.tensor(test_losses)))
         self.losses['test'].clear()
 
-        all_x, all_y, all_y_hat, paramlist = self.calculate_metrics(self.trainer.test_dataloaders)
+        all_x, all_y, all_y_hat, all_wvfs, all_lengths, all_indices, paramlist = self.calculate_metrics(self.trainer.test_dataloaders)
         self.make_waveform_index_plots(all_x, all_y, all_y_hat, 'test')
         self.make_prediction_accuracy_plots(paramlist, 'test')
+
+        # save result dataframe
+        self.save_dataframe(all_wvfs, all_y, all_y_hat, all_lengths, all_indices)
 
     def on_train_end(self):
         print('On train end ...')
         
-        all_x, all_y, all_y_hat, paramlist = self.calculate_metrics(self.trainer.train_dataloader)
+        all_x, all_y, all_y_hat, all_wvfs, all_lengths, all_indices, paramlist = self.calculate_metrics(self.trainer.train_dataloader)
         self.make_waveform_index_plots(all_x, all_y, all_y_hat, 'train')
         self.make_prediction_accuracy_plots(paramlist, 'train')
 
-        all_x, all_y, all_y_hat, paramlist = self.calculate_metrics(self.trainer.val_dataloaders)
+        all_x, all_y, all_y_hat, all_wvfs, all_lengths, all_indices, paramlist = self.calculate_metrics(self.trainer.val_dataloaders)
         self.make_waveform_index_plots(all_x, all_y, all_y_hat, 'val')
         self.make_prediction_accuracy_plots(paramlist, 'val')
     
     def calculate_metrics(self, dataloader):
-        all_x, all_y, all_y_hat, all_lengths, all_wvfs = [],[],[],[],[]
+        all_x, all_y, all_y_hat, all_lengths, all_wvfs, all_indices = [],[],[],[],[],[]
         for batch in dataloader:
             x, y, index, subid, lengths, wvfs = batch
             x, y, lengths = x.to(self.device), y.to(self.device), lengths.to(self.device)
@@ -130,6 +140,7 @@ class CNNModule(pl.LightningModule):
             all_y_hat.extend(y_hat)
             all_lengths.extend(lengths)
             all_wvfs.extend(wvfs)
+            all_indices.extend(index)
 
         # convert the lists to tensors
         all_x = torch.stack(all_x)
@@ -137,6 +148,7 @@ class CNNModule(pl.LightningModule):
         all_y_hat = torch.stack(all_y_hat)
         all_lengths = torch.stack(all_lengths)
         all_wvfs = torch.stack(all_wvfs)
+        all_indices = torch.stack(all_indices)
         
         # calculate mse
         mse = F.mse_loss(all_y, all_y_hat)
@@ -144,7 +156,7 @@ class CNNModule(pl.LightningModule):
         # calculate physio params
         paramlist = self.calculate_physio_params(all_wvfs, all_y, all_y_hat, all_lengths)
         
-        return all_x, all_y, all_y_hat, paramlist
+        return all_x, all_y, all_y_hat, all_wvfs, all_lengths, all_indices, paramlist
         
     def calculate_physio_params(self, all_x, all_y, all_y_hat, all_lengths):
 
@@ -302,3 +314,55 @@ class CNNModule(pl.LightningModule):
           np.min([ax1.get_ylim()[0], 1.3*l_loa]),
           np.max([ax1.get_ylim()[1], 1.3*u_loa]),
           )
+        
+    def save_dataframe(self, wvfs, true_params, pred_params, lengths, indices):
+        """ Function is used to save the dataframe with the model predictions. """
+
+        # unpack variables
+        subids = indices[:, 0].detach().cpu().numpy()
+        loc = indices[:, 1].detach().cpu().numpy()
+        cycle = indices[:, 2].detach().cpu().numpy()
+        p1_true = true_params[:, 0].detach().cpu().numpy()
+        p2_true = true_params[:, 1].detach().cpu().numpy()
+        n_true = true_params[:, 2].detach().cpu().numpy()
+        p1_pred = pred_params[:, 0].detach().cpu().numpy()
+        p2_pred = pred_params[:, 1].detach().cpu().numpy()
+        n_pred = pred_params[:, 2].detach().cpu().numpy()
+        lengths = lengths.detach().cpu().numpy()
+        wvfs = [list(x) for x in wvfs.detach().cpu().numpy()]
+
+        # generate the SUBID-SiteID indices
+        subids = ['0'*(6-len(str(x)))+str(x) for x in subids]
+        siteid = [str(x)[3:] for x in subids]
+        subid = [str(x)[:3] for x in subids]
+
+        # convert indices back to ms units
+        p1_true = (p1_true * lengths).astype(int)
+        p2_true = (p2_true * lengths).astype(int)
+        n_true = (n_true * lengths).astype(int)
+        p1_pred = (p1_pred * lengths).astype(int)
+        p2_pred = (p2_pred * lengths).astype(int)
+        n_pred = (n_pred * lengths).astype(int)
+
+        # create the dataframe
+        df = pd.DataFrame({
+            'SUBID': subid,
+            'SiteID': siteid,
+            'loc': loc,
+            'cycle': cycle,
+            'p1_true': p1_true,
+            'p2_true': p2_true,
+            'n_true': n_true,
+            'p1_pred': p1_pred,
+            'p2_pred': p2_pred,
+            'n_pred': n_pred,
+            'waveform': wvfs
+        })
+        df.set_index(['SUBID','SiteID','loc','cycle'], inplace=True)
+        
+        # save the dataframe
+        if 'special_test' in self.kwargs.keys():
+            test = self.kwargs['special_test']
+            df.to_pickle(os.path.join(self.save_path, f'results_{test}.pkl'))
+        else:
+            df.to_pickle(os.path.join(self.save_path, 'results.pkl'))

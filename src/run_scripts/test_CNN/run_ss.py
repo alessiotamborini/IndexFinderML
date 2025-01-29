@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--num_workers', type=int, default=9, help='Number of workers for the dataloaders.')
     parser.add_argument('--channels_present', type=bool, default=True, help='Whether the data has channels.')
     parser.add_argument('--train_proportion', type=float, default=0.9, help='The percentage of training set to use.')
+    parser.add_argument('--train_proportion_seed', type=int, default=None, help='The seed for the training set proportion.')
     # model hyperparameters
     parser.add_argument('--input_dim', type=int, default=1, help='Input dimension of the data.')
     parser.add_argument('--output_dim', type=int, default=3, help='Output dimension of the data.')
@@ -44,7 +45,15 @@ def main():
     # build the experiment configuration
     args = parser.parse_args()
     config = vars(args)
-    Runner(**config)
+
+    seeds = [0,1,2,3,4]
+    train_proportions = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    for train_proportion in train_proportions:
+        for seed in seeds:
+            config['train_proportion_seed'] = seed
+            config['train_proportion'] = train_proportion
+            config['special_test'] = 'train_ss_{}p_s{}'.format(int(train_proportion*100), seed)
+            Runner(**config)
 
 if __name__ == '__main__':
     main()
