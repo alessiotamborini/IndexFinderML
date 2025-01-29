@@ -36,7 +36,7 @@ class mcCNN(nn.Module):
         else:
             raise ValueError('Activation type not supported.')
         
-                # convolutional block 1
+        # convolutional block 1
         self.conv1 = nn.Conv1d(input_dim, layer_dims[0], kernel_size=kernel_dim, stride=stride, padding=padding)
         self.relu1 = nn.ReLU()
         self.pool1 = nn.MaxPool1d(kernel_size=2, stride=2)

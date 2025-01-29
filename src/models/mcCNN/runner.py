@@ -21,6 +21,8 @@ class Runner:
             seed: int = 3,
             split_type: str = 'subid',
             num_workers: int = 1,
+            train_proportion: float = 1.0,
+            train_proportion_seed: int = None,
             # model hyperparameters
             input_dim: int = 3,
             output_dim: int = 3,
@@ -32,6 +34,7 @@ class Runner:
             activation_type: str = 'relu',
             lr: float = 1e-3,
             monitor_metric: str = 'val_loss',
+            special_test: str = None,
             # trainer hyperparameters
             max_epochs: int = 100,
             gradient_clip_val: float = 10.0,
@@ -55,6 +58,8 @@ class Runner:
             'seed': seed,
             'split_type': split_type,
             'num_workers': num_workers,
+            'train_proportion': train_proportion,
+            'train_proportion_seed': train_proportion_seed,
         }
 
         self.model_hyperparameters = {
@@ -69,6 +74,8 @@ class Runner:
             'lr': lr,
             'monitor_metric': monitor_metric,
         }
+        if special_test is not None:
+            self.model_hyperparameters.update({'special_test': special_test})
 
         self.trainer_hyperparameters = {
             'max_epochs': max_epochs,
