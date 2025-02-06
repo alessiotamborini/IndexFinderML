@@ -155,28 +155,28 @@ class MLPModule(pl.LightningModule):
         
     def calculate_physio_params(self, all_x, all_y, all_y_hat, all_lengths):
 
-        # unpack p1 and p2 from the tensor
+        # unpack p and i from the tensor
         all_x = all_x.cpu().detach().numpy()
         all_y = all_y.cpu().detach().numpy()
         all_y_hat = all_y_hat.cpu().detach().numpy()
         all_lengths = all_lengths.cpu().detach().numpy()
-        true_p1, true_p2, true_n = all_y[:, 0], all_y[:, 1], all_y[:, 2]
-        pred_p1, pred_p2, pred_n = all_y_hat[:, 0], all_y_hat[:, 1], all_y_hat[:, 2]
+        true_p, true_i, true_n = all_y[:, 0], all_y[:, 1], all_y[:, 2]
+        pred_p, pred_i, pred_n = all_y_hat[:, 0], all_y_hat[:, 1], all_y_hat[:, 2]
 
         # convert the percentage units to index units
-        true_p1 = (true_p1 * all_lengths).astype(int)
-        true_p2 = (true_p2 * all_lengths).astype(int)
+        true_p = (true_p * all_lengths).astype(int)
+        true_i = (true_i * all_lengths).astype(int)
         true_n = (true_n * all_lengths).astype(int)
-        pred_p1 = (pred_p1 * all_lengths).astype(int)
-        pred_p2 = (pred_p2 * all_lengths).astype(int)
+        pred_p = (pred_p * all_lengths).astype(int)
+        pred_i = (pred_i * all_lengths).astype(int)
         pred_n = (pred_n * all_lengths).astype(int)
 
         # calculate the augmentation index (AIX)
         all_aix_true, all_aix_pred = [],[]
-        for x, p1t, p2t, p1p, p2p in zip(all_x, true_p1, true_p2, pred_p1, pred_p2):
+        for x, pt, it, pp, ip in zip(all_x, true_p, true_i, pred_p, pred_i):
             x = x[~np.isnan(x)]
-            aix_true = 100*(x[p2t] - x[p1t]) / x.ptp()
-            aix_pred = 100*(x[p2p] - x[p1p]) / x.ptp()
+            aix_true = 100*(x[it] - x[pt]) / x.ptp()
+            aix_pred = 100*(x[ip] - x[pp]) / x.ptp()
             all_aix_true.append(aix_true)
             all_aix_pred.append(aix_pred)
 
@@ -198,8 +198,8 @@ class MLPModule(pl.LightningModule):
 
         # combine a parameter list
         paramlist = [
-            [np.array(true_p1), np.array(pred_p1), 'p1_ind'],
-            [np.array(true_p2), np.array(pred_p2), 'p2_ind'],   
+            [np.array(true_p), np.array(pred_p), 'p_ind'],
+            [np.array(true_i), np.array(pred_i), 'i_ind'],   
             [np.array(true_n), np.array(pred_n), 'n_ind'],
             [np.array(all_aix_true), np.array(all_aix_pred), 'AIX'],
             [np.array(all_spti_true), np.array(all_spti_pred), 'SPTI'],
@@ -220,8 +220,8 @@ class MLPModule(pl.LightningModule):
         fig, axes = plt.subplots(2, 5, figsize=(15, 6))
         for ax, xs, ys, y_hat in zip(axes.ravel(), xs, ys, ys_hat):
             ax.plot(np.linspace(0, 1, len(xs.squeeze())), xs.squeeze())
-            ax.axvline(ys[0], color='r', linestyle='-', alpha=0.5, label='P1')
-            ax.axvline(ys[1], color='k', linestyle='-', alpha=0.5, label='P2')
+            ax.axvline(ys[0], color='r', linestyle='-', alpha=0.5, label='p')
+            ax.axvline(ys[1], color='k', linestyle='-', alpha=0.5, label='i')
             ax.axvline(ys[2], color='g', linestyle='-', alpha=0.5, label='N')
             ax.axvline(y_hat[0], color='r', linestyle='--')
             ax.axvline(y_hat[1], color='k', linestyle='--')
@@ -317,11 +317,11 @@ class MLPModule(pl.LightningModule):
         subids = indices[:, 0].detach().cpu().numpy()
         loc = indices[:, 1].detach().cpu().numpy()
         cycle = indices[:, 2].detach().cpu().numpy()
-        p1_true = true_params[:, 0].detach().cpu().numpy()
-        p2_true = true_params[:, 1].detach().cpu().numpy()
+        p_true = true_params[:, 0].detach().cpu().numpy()
+        i_true = true_params[:, 1].detach().cpu().numpy()
         n_true = true_params[:, 2].detach().cpu().numpy()
-        p1_pred = pred_params[:, 0].detach().cpu().numpy()
-        p2_pred = pred_params[:, 1].detach().cpu().numpy()
+        p_pred = pred_params[:, 0].detach().cpu().numpy()
+        i_pred = pred_params[:, 1].detach().cpu().numpy()
         n_pred = pred_params[:, 2].detach().cpu().numpy()
         lengths = lengths.detach().cpu().numpy()
         wvfs = [list(x) for x in wvfs.detach().cpu().numpy()]
@@ -332,11 +332,11 @@ class MLPModule(pl.LightningModule):
         subid = [str(x)[:3] for x in subids]
 
         # convert indices back to ms units
-        p1_true = (p1_true * lengths).astype(int)
-        p2_true = (p2_true * lengths).astype(int)
+        p_true = (p_true * lengths).astype(int)
+        i_true = (i_true * lengths).astype(int)
         n_true = (n_true * lengths).astype(int)
-        p1_pred = (p1_pred * lengths).astype(int)
-        p2_pred = (p2_pred * lengths).astype(int)
+        p_pred = (p_pred * lengths).astype(int)
+        i_pred = (i_pred * lengths).astype(int)
         n_pred = (n_pred * lengths).astype(int)
 
         # create the dataframe
@@ -345,11 +345,11 @@ class MLPModule(pl.LightningModule):
             'SiteID': siteid,
             'loc': loc,
             'cycle': cycle,
-            'p1_true': p1_true,
-            'p2_true': p2_true,
+            'p_true': p_true,
+            'i_true': i_true,
             'n_true': n_true,
-            'p1_pred': p1_pred,
-            'p2_pred': p2_pred,
+            'p_pred': p_pred,
+            'i_pred': i_pred,
             'n_pred': n_pred,
             'waveform': wvfs
         })

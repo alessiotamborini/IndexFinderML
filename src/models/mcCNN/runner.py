@@ -129,9 +129,6 @@ class Runner:
         data_module = WaveformIndexDataModule_wDerivatives(**self.data_hyperparameters)
         data_module.setup()
         subid_split = data_module.return_subid_split()
-        for k, v in subid_split.items(): 
-            print(k, len(v))
-        raise
         subid_split = data_module.return_subid_split()
         self.model_hyperparameters.update({'subid_split':subid_split})
 
@@ -142,7 +139,7 @@ class Runner:
         trainer.fit(model, datamodule=data_module)
 
         # test the model
-        trainer.test(model, datamodule=data_module)#, ckpt_path='best')
+        trainer.test(model, datamodule=data_module, ckpt_path='best')
 
         # terminate the wandb run
         wandb.finish()

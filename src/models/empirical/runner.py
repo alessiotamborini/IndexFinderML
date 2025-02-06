@@ -96,7 +96,7 @@ class Runner:
                 results.append([SUBID, SiteID, loc, idx[2], output[0], output[1], output[2], p1_ind, p2_ind, n_ind, wvf])
             
         # save the results
-        results = pd.DataFrame(results, columns=['SUBID', 'SiteID', 'loc', 'cycle', 'p1_true', 'p2_true', 'n_true', 'p1_pred', 'p2_pred', 'n_pred','waveform'])
+        results = pd.DataFrame(results, columns=['SUBID', 'SiteID', 'loc', 'cycle', 'p_true', 'i_true', 'n_true', 'p_pred', 'i_pred', 'n_pred','waveform'])
         results.set_index(['SUBID','SiteID','loc','cycle'], inplace=True)
         
         # save the results
