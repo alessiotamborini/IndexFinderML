@@ -175,8 +175,10 @@ class fNNModule(pl.LightningModule):
         all_aix_true, all_aix_pred = [],[]
         for x, pt, it, pp, ip in zip(all_x, true_p, true_i, pred_p, pred_i):
             x = x[~np.isnan(x)]
-            aix_true = 100*(x[it] - x[pt]) / x.ptp()
-            aix_pred = 100*(x[ip] - x[pp]) / x.ptp()
+            ap_true = x[pt] - x[it] if pt > it else x[it] - x[pt]
+            ap_pred = x[pp] - x[ip] if pp > ip else x[ip] - x[pp]
+            aix_true = 100 * ap_true / x.ptp()
+            aix_pred = 100 * ap_pred / x.ptp()
             all_aix_true.append(aix_true)
             all_aix_pred.append(aix_pred)
 

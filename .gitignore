@@ -5,6 +5,7 @@ data
 src/df_prep.py
 src/test_script.py
 src/verify_point.py
+src/convert_df_idxs.py
 src/__pycache__/
 src/utils/__pycache__/
 
@@ -27,3 +28,5 @@ src/run_scripts/test_fNN/checkpoints
 src/run_scripts/test_fNN/wandb
 src/run_scripts/test_fNN/save
 src/run_scripts/test_empirical/save
+
+notebooks/study_model_error.ipynb

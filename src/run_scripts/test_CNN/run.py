@@ -11,7 +11,7 @@ def main():
     parser.add_argument('--model_name', type=str, default='CNN', help='Name of the model.')
     # data hyperparameters
     parser.add_argument('--data_dir', type=str, default='../../../data/', help='Path to the data directory.')
-    parser.add_argument('--data_fname', type=str, default='wvfIndexData_AO.pkl', help='Name of the data file.')
+    parser.add_argument('--data_fname', type=str, default='wvfIndexData_AO_vrfd_cnv.pkl', help='Name of the data file.')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for the dataloaders.')
     parser.add_argument('--size', type=dict, default={'train': 0.7, 'val': 0.1, 'test': 0.2}, help='Size of the training, validation, and test sets.')
     parser.add_argument('--seed', type=int, default=0, help='Random seed for reproducibility.')

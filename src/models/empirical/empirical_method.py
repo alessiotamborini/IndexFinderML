@@ -44,4 +44,7 @@ def empirical_method(wvf):
     d1_argmin = np.argmin(wvf_d1)                           # arg minimum of the first derivative
     dn_idx = np.argmax(wvf_d2[d1_argmin:]) + d1_argmin
 
+    # find p_ind value
+    p_ind = np.argmax(wvf[:dn_idx])
+
     return p_ind, i_ind, dn_idx

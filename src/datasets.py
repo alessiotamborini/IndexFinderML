@@ -29,13 +29,13 @@ def data_preprocessing(df):
     # calibrate waveforms to have amplitude in the [DBP, SBP] range
     df['wvf_calib'] = df.apply(lambda x: (x['sbp']-x['dbp']) * (x['wvf']-x['wvf'].min()) / (x['wvf'].ptp()) + x['dbp'], axis=1)
 
-    # determine the peak and inflection point indices
-    df['p_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] > x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
-    df['i_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] < x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
+    # # determine the peak and inflection point indices
+    # df['p_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] > x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
+    # df['i_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] < x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
 
     # normalize the labels to be in the range [0, 1]
-    df['p1_ind_norm'] = df['p1_ind'].div(df['m_ind'])
-    df['p2_ind_norm'] = df['p2_ind'].div(df['m_ind'])
+    # df['p1_ind_norm'] = df['p1_ind'].div(df['m_ind'])
+    # df['p2_ind_norm'] = df['p2_ind'].div(df['m_ind'])
     df['p_ind_norm'] = df['p_ind'].div(df['m_ind'])
     df['i_ind_norm'] = df['i_ind'].div(df['m_ind'])
     df['n_ind_norm'] = df['n_ind'].div(df['m_ind'])
@@ -99,17 +99,21 @@ def data_preprocessing_with_derivatives(df):
     df['wvf_d_norm'] = df['wvf_d_norm'].apply(lambda x: (x - np.mean(x)) / np.std(x))       # normalize amplitude to zero mean and unit variance
     df['wvf_dd_norm'] = df['wvf_d_norm'].apply(lambda x: np.gradient(x))
     df['wvf_dd_norm'] = df['wvf_dd_norm'].apply(lambda x: (x - np.mean(x)) / np.std(x))     # normalize amplitude to zero mean and unit variance
+    df['wvf_ddd_norm'] = df['wvf_dd_norm'].apply(lambda x: np.gradient(x))
+    df['wvf_ddd_norm'] = df['wvf_ddd_norm'].apply(lambda x: (x - np.mean(x)) / np.std(x))     # normalize amplitude to zero mean and unit variance
+    df['wvf_dddd_norm'] = df['wvf_ddd_norm'].apply(lambda x: np.gradient(x))
+    df['wvf_dddd_norm'] = df['wvf_dddd_norm'].apply(lambda x: (x - np.mean(x)) / np.std(x))     # normalize amplitude to zero mean and unit variance
 
     # calibrate waveforms to have amplitude in the [DBP, SBP] range
     df['wvf_calib'] = df.apply(lambda x: (x['sbp']-x['dbp']) * (x['wvf']-x['wvf'].min()) / (x['wvf'].ptp()) + x['dbp'], axis=1)
 
-    # determine the peak and inflection point indices
-    df['p_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] > x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
-    df['i_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] < x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
+    # # determine the peak and inflection point indices
+    # df['p_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] > x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
+    # df['i_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] < x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
 
     # normalize the labels to be in the range [0, 1]
-    df['p1_ind_norm'] = df['p1_ind'].div(df['m_ind'])
-    df['p2_ind_norm'] = df['p2_ind'].div(df['m_ind'])
+    # df['p1_ind_norm'] = df['p1_ind'].div(df['m_ind'])
+    # df['p2_ind_norm'] = df['p2_ind'].div(df['m_ind'])
     df['p_ind_norm'] = df['p_ind'].div(df['m_ind'])
     df['i_ind_norm'] = df['i_ind'].div(df['m_ind'])
     df['n_ind_norm'] = df['n_ind'].div(df['m_ind'])
@@ -195,6 +199,12 @@ class WaveformIndexDataModule(pl.LightningDataModule):
     def prepare_data(self):
         # load the dataset
         df = pd.read_pickle(os.path.join(self.data_dir, self.data_fname))
+        
+        # drop any nan row
+        df = df.dropna()
+        df['p_ind'] = df['p_ind'].astype(int)
+        df['i_ind'] = df['i_ind'].astype(int)
+        df['n_ind'] = df['n_ind'].astype(int)
         
         # preprocess the dataset to normalize the waveforms for input to the CNN
         inputs, outputs, indices, subids, lengths, calib_wvfs = data_preprocessing(df)
@@ -330,6 +340,12 @@ class WaveformIndexDataModule_wDerivatives(pl.LightningDataModule):
     def prepare_data(self):
         # load the dataset
         df = pd.read_pickle(os.path.join(self.data_dir, self.data_fname))
+
+        # drop any nan row
+        df = df.dropna()
+        df['p_ind'] = df['p_ind'].astype(int)
+        df['i_ind'] = df['i_ind'].astype(int)
+        df['n_ind'] = df['n_ind'].astype(int)
         
         # preprocess the dataset to normalize the waveforms for input to the CNN
         inputs, outputs, indices, subids, lengths, calib_wvfs = data_preprocessing_with_derivatives(df)
