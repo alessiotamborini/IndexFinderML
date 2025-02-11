@@ -56,7 +56,9 @@ class mcCNNModule(pl.LightningModule):
         return self.model(x)
     
     def custom_loss(self, y_hat, y):
-        loss = F.mse_loss(y_hat, y)
+        base_loss = F.mse_loss(y_hat, y)
+        penalty = torch.mean(F.relu(y_hat[:,0] - y_hat[:,1])) # penality if y_hat[0] > y_hat[1]
+        loss = base_loss + penalty
         return loss
 
     def training_step(self, batch, batch_idx):
@@ -154,27 +156,29 @@ class mcCNNModule(pl.LightningModule):
         mse = F.mse_loss(all_y, all_y_hat)
 
         # calculate physio params
-        paramlist = self.calculate_physio_params(all_wvfs, all_y, all_y_hat, all_lengths)
+        paramlist = self.calculate_physio_params(all_wvfs, all_y, all_y_hat, all_lengths, all_wvfs)
         
         return all_x, all_y, all_y_hat, all_wvfs, all_lengths, all_indices, paramlist
         
-    def calculate_physio_params(self, all_x, all_y, all_y_hat, all_lengths):
+    def calculate_physio_params(self, all_x, all_y, all_y_hat, all_lengths, all_wvfs):
 
         # unpack p1 and p2 from the tensor
         all_x = all_x.cpu().detach().numpy()
         all_y = all_y.cpu().detach().numpy()
         all_y_hat = all_y_hat.cpu().detach().numpy()
         all_lengths = all_lengths.cpu().detach().numpy()
-        true_p, true_i, true_n = all_y[:, 0], all_y[:, 1], all_y[:, 2]
-        pred_p, pred_i, pred_n = all_y_hat[:, 0], all_y_hat[:, 1], all_y_hat[:, 2]
+        true_i, true_n = all_y[:, 0], all_y[:, 1]
+        pred_i, pred_n = all_y_hat[:, 0], all_y_hat[:, 1]
 
         # convert the percentage units to index units
-        true_p = (true_p * all_lengths).astype(int)
         true_i = (true_i * all_lengths).astype(int)
         true_n = (true_n * all_lengths).astype(int)
-        pred_p = (pred_p * all_lengths).astype(int)
         pred_i = (pred_i * all_lengths).astype(int)
         pred_n = (pred_n * all_lengths).astype(int)
+        
+        # calculate the true p index
+        true_p = [np.argmax(x[:n]) for x, n in zip(all_wvfs, true_n)]
+        pred_p = [np.argmax(x[:n]) for x, n in zip(all_wvfs, pred_n)]
 
         # calculate the augmentation index (AIX)
         all_aix_true, all_aix_pred = [],[]
@@ -227,12 +231,12 @@ class mcCNNModule(pl.LightningModule):
         fig, axes = plt.subplots(2, 5, figsize=(15, 6))
         for ax, xs, ys, y_hat in zip(axes.ravel(), xs, ys, ys_hat):
             ax.plot(np.linspace(0, 1, len(xs.squeeze())), xs.squeeze())
-            ax.axvline(ys[0], color='r', linestyle='-', alpha=0.5, label='P1')
-            ax.axvline(ys[1], color='k', linestyle='-', alpha=0.5, label='P2')
-            ax.axvline(ys[2], color='g', linestyle='-', alpha=0.5, label='N')
+            ax.axvline(ys[0], color='r', linestyle='-', alpha=0.5, label='I')
+            ax.axvline(ys[1], color='k', linestyle='-', alpha=0.5, label='N')
+            # ax.axvline(ys[2], color='g', linestyle='-', alpha=0.5, label='N')
             ax.axvline(y_hat[0], color='r', linestyle='--')
             ax.axvline(y_hat[1], color='k', linestyle='--')
-            ax.axvline(y_hat[2], color='g', linestyle='--')
+            # ax.axvline(y_hat[2], color='g', linestyle='--')
         
         plt.tight_layout()
         wandb.log({f"params/{stage}/index_wvf_plot": wandb.Image(fig)})
@@ -324,12 +328,12 @@ class mcCNNModule(pl.LightningModule):
         subids = indices[:, 0].detach().cpu().numpy()
         loc = indices[:, 1].detach().cpu().numpy()
         cycle = indices[:, 2].detach().cpu().numpy()
-        p_true = true_params[:, 0].detach().cpu().numpy()
-        i_true = true_params[:, 1].detach().cpu().numpy()
-        n_true = true_params[:, 2].detach().cpu().numpy()
-        p_pred = pred_params[:, 0].detach().cpu().numpy()
-        i_pred = pred_params[:, 1].detach().cpu().numpy()
-        n_pred = pred_params[:, 2].detach().cpu().numpy()
+        # p_true = true_params[:, 0].detach().cpu().numpy()
+        i_true = true_params[:, 0].detach().cpu().numpy()
+        n_true = true_params[:, 1].detach().cpu().numpy()
+        # p_pred = pred_params[:, 0].detach().cpu().numpy()
+        i_pred = pred_params[:, 0].detach().cpu().numpy()
+        n_pred = pred_params[:, 1].detach().cpu().numpy()
         lengths = lengths.detach().cpu().numpy()
         wvfs = [list(x) for x in wvfs.detach().cpu().numpy()]
 
@@ -339,10 +343,10 @@ class mcCNNModule(pl.LightningModule):
         subid = [str(x)[:3] for x in subids]
 
         # convert indices back to ms units
-        p_true = (p_true * lengths).astype(int)
+        # p_true = (p_true * lengths).astype(int)
         i_true = (i_true * lengths).astype(int)
         n_true = (n_true * lengths).astype(int)
-        p_pred = (p_pred * lengths).astype(int)
+        # p_pred = (p_pred * lengths).astype(int)
         i_pred = (i_pred * lengths).astype(int)
         n_pred = (n_pred * lengths).astype(int)
 
@@ -352,10 +356,10 @@ class mcCNNModule(pl.LightningModule):
             'SiteID': siteid,
             'loc': loc,
             'cycle': cycle,
-            'p_true': p_true,
+            # 'p_true': p_true,
             'i_true': i_true,
             'n_true': n_true,
-            'p_pred': p_pred,
+            # 'p_pred': p_pred,
             'i_pred': i_pred,
             'n_pred': n_pred,
             'waveform': wvfs

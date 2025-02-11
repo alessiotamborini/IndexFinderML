@@ -11,7 +11,7 @@ class mcCNN(nn.Module):
 
     def __init__(self,
                  input_dim: int = 3,
-                 output_dim: int = 3,
+                 output_dim: int = 2,
                  layer_dims: list = [16, 32, 64],
                  kernel_dim: int = 3,
                  stride: int = 1,
@@ -82,5 +82,3 @@ class mcCNN(nn.Module):
         x = self.fc2(x)
 
         return x
-
-

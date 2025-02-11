@@ -20,7 +20,7 @@ def main():
     parser.add_argument('--train_proportion', type=float, default=1.0, help='The percentage of training set to use.')
     # model hyperparameters
     parser.add_argument('--input_modes', type=int, default=20, help='Input dimension of the data.')
-    parser.add_argument('--output_dim', type=int, default=3, help='Output dimension of the data.')
+    parser.add_argument('--output_dim', type=int, default=2, help='Output dimension of the data.')
     parser.add_argument('--layer_dims', type=list, default=[128, 64, 32], help='Dimensions of the layers in the model.')
     parser.add_argument('--dropout', type=float, default=0.35, help='Dropout rate for the model.')
     parser.add_argument('--activation_type', type=str, default='relu', help='Type of activation function to use.')

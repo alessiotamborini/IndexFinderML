@@ -29,9 +29,6 @@ def data_preprocessing(df):
     # calibrate waveforms to have amplitude in the [DBP, SBP] range
     df['wvf_calib'] = df.apply(lambda x: (x['sbp']-x['dbp']) * (x['wvf']-x['wvf'].min()) / (x['wvf'].ptp()) + x['dbp'], axis=1)
 
-    # # determine the peak and inflection point indices
-    # df['p_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] > x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
-    # df['i_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] < x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
 
     # normalize the labels to be in the range [0, 1]
     # df['p1_ind_norm'] = df['p1_ind'].div(df['m_ind'])
@@ -68,7 +65,7 @@ def data_preprocessing(df):
 
     # convert structures to Tensor
     inputs = torch.tensor([list(x) for x in df['wvf_norm'].values], dtype=torch.float32)
-    outputs = torch.tensor(df[['p_ind_norm', 'i_ind_norm', 'n_ind_norm']].values, dtype=torch.float32)
+    outputs = torch.tensor(df[['i_ind_norm', 'n_ind_norm']].values, dtype=torch.float32)
     indices = torch.tensor([df['index'].values.tolist()], dtype=torch.int64).squeeze()
     subids = torch.tensor(df['subid'].values, dtype=torch.int64)
     lengths = torch.tensor(df['m_ind'].values, dtype=torch.int64)
@@ -107,10 +104,6 @@ def data_preprocessing_with_derivatives(df):
     # calibrate waveforms to have amplitude in the [DBP, SBP] range
     df['wvf_calib'] = df.apply(lambda x: (x['sbp']-x['dbp']) * (x['wvf']-x['wvf'].min()) / (x['wvf'].ptp()) + x['dbp'], axis=1)
 
-    # # determine the peak and inflection point indices
-    # df['p_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] > x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
-    # df['i_ind'] = df.apply(lambda x: x['p1_ind'] if x['wvf'][x['p1_ind']] < x['wvf'][x['p2_ind']] else x['p2_ind'], axis=1)
-
     # normalize the labels to be in the range [0, 1]
     # df['p1_ind_norm'] = df['p1_ind'].div(df['m_ind'])
     # df['p2_ind_norm'] = df['p2_ind'].div(df['m_ind'])
@@ -146,7 +139,7 @@ def data_preprocessing_with_derivatives(df):
 
     # convert structures to Tensor
     inputs = torch.tensor([[list(x), list(dx), list(dxx)] for x, dx, dxx in df[['wvf_norm', 'wvf_d_norm', 'wvf_dd_norm']].values], dtype=torch.float32)
-    outputs = torch.tensor(df[['p_ind_norm', 'i_ind_norm', 'n_ind_norm']].values, dtype=torch.float32)
+    outputs = torch.tensor(df[['i_ind_norm', 'n_ind_norm']].values, dtype=torch.float32)
     indices = torch.tensor([df['index'].values.tolist()], dtype=torch.int64).squeeze()
     subids = torch.tensor(df['subid'].values, dtype=torch.int64)
     lengths = torch.tensor(df['m_ind'].values, dtype=torch.int64)

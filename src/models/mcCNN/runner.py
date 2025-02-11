@@ -1,6 +1,7 @@
 import sys
 import torch
 import wandb
+import pickle
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
@@ -25,7 +26,7 @@ class Runner:
             train_proportion_seed: int = None,
             # model hyperparameters
             input_dim: int = 3,
-            output_dim: int = 3,
+            output_dim: int = 2,
             layer_dims: list = [16, 32, 64],
             kernel_dim: int = 3,
             stride: int = 1,
@@ -132,6 +133,10 @@ class Runner:
         subid_split = data_module.return_subid_split()
         self.model_hyperparameters.update({'subid_split':subid_split})
 
+        # save the train-val-test split to a pickle file
+        with open('./save/subid_split.pkl', 'wb') as f:
+            pickle.dump(subid_split, f)
+
         # initialize the model
         model = mcCNNModule(**self.model_hyperparameters)
 
@@ -139,7 +144,7 @@ class Runner:
         trainer.fit(model, datamodule=data_module)
 
         # test the model
-        trainer.test(model, datamodule=data_module, ckpt_path='best')
+        trainer.test(model, datamodule=data_module)#, ckpt_path='best')
 
         # terminate the wandb run
         wandb.finish()

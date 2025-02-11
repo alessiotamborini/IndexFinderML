@@ -26,7 +26,7 @@ class Runner:
             train_proportion_seed: int = None,
             # model hyperparameters
             input_dim: int = 1000,
-            output_dim: int = 3,
+            output_dim: int = 2,
             layer_dims: list = [128, 64, 32],
             dropout: float = 0.35,
             activation_type: str = 'relu',
