@@ -52,11 +52,9 @@ The output from PIM will be an numpy array containing the indices corresponding 
 
 Two model versions of the model are available for use:
 
-1. **Model Checkpoint with Augmented Data**: "augmented_model.pth"
-This version of the model has been trained using augmented data, which can help improve the model's robustness and performance on a wider range of inputs.
+1. ```"augmented_model.pth"```: **Model Checkpoint with Augmented Data**. This version of the model has been trained using augmented data, which can help improve the model's robustness and performance on a wider range of inputs.
 
-2. **Model Checkpoint without Augmented Data**: "base_model.pth"
-This version of the model has been trained without any data augmentation, providing a baseline performance on the original dataset.
+2. ```"base_model.pth"```: **Model Checkpoint without Augmented Data**. This version of the model has been trained without any data augmentation, providing a baseline performance on the original dataset.
 
 ## Contact
 For any questions or inquiries, please contact the project maintainer:
