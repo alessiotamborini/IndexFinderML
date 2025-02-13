@@ -1,3 +1,4 @@
+import os
 import sys
 
 import numpy as np
@@ -11,8 +12,10 @@ from models.mcCNN.mcCNN_pytorch import mcCNN
 from utils.butterworth_filter import butterworth_filter
 
 class PimPredictor:
-    def __init__(self, model_path):
+    def __init__(self, checkpoint):
         super(PimPredictor, self).__init__()
+        script_dir = os.path.dirname(__file__)
+        model_path = os.path.join(script_dir,'pretrained_models',checkpoint)
         self.load_pretrained_model(model_path)
 
     def predict(self, x, dt=1):
