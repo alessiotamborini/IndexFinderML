@@ -29,4 +29,6 @@ src/run_scripts/test_fNN/wandb
 src/run_scripts/test_fNN/save
 src/run_scripts/test_empirical/save
 
+src/pulse_indexer/__pycache__/
+
 notebooks/study_model_error.ipynb
