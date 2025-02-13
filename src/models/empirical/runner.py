@@ -84,21 +84,28 @@ class Runner:
                 SUBID = subid[:3]
                 
                 # calculate the indices
-                p1_ind, p2_ind, n_ind = empirical_method(wvf)
+                p_ind, i_ind, n_ind = empirical_method(wvf)
             
                 # convert outputs from tensor to numpy
                 output *= len_
                 output = output.round(0).astype(int)
 
+                # if i_ind is not None and np.abs(output[0] - i_ind) > 250:
+                #     print(output[0], i_ind)
+                #     plt.plot(wvf)
+                #     plt.axvline(x=output[0], color='r')
+                #     plt.axvline(x=i_ind, color='g')
+                #     plt.show()
+
                 # store results
                 # print(f'Index: {idx}, Output: {output}, P1: {p1_ind}, P2: {p2_ind}, N: {n_ind}')
 
-                results.append([SUBID, SiteID, loc, idx[2], output[0], output[1], output[2], p1_ind, p2_ind, n_ind, wvf])
+                results.append([SUBID, SiteID, loc, idx[2], output[0], output[1], i_ind, n_ind, wvf])
             
         # save the results
-        results = pd.DataFrame(results, columns=['SUBID', 'SiteID', 'loc', 'cycle', 'p_true', 'i_true', 'n_true', 'p_pred', 'i_pred', 'n_pred','waveform'])
+        results = pd.DataFrame(results, columns=['SUBID', 'SiteID', 'loc', 'cycle', 'i_true', 'n_true', 'i_pred', 'n_pred','waveform'])
         results.set_index(['SUBID','SiteID','loc','cycle'], inplace=True)
         
         # save the results
-        results.to_pickle('./save/results.pkl')
+        results.to_pickle('./save/results_base.pkl')
         
