@@ -2,21 +2,7 @@
 
 This library contains the work for the machine learning-based automated cardiac pressure waveform fiducial point detection.
 
-## Table of Contents
-1. [Introduction](#introduction)
-2. [Installation](#installation)
-3. [Usage](#usage)
-4. [Features](#features)
-5. [Contributing](#contributing)
-6. [License](#license)
-7. [Contact](#contact)
-
-## Introduction
-Provide a brief overview of the project, its purpose, and its goals.
-
 ![Cardiac Pressure Waveform](./assets/model_diagram.png)
-
-Make sure to replace `path/to/your/image.png` with the actual path to your image file.
 
 ## Installation
 
@@ -47,24 +33,46 @@ To install and set up the project, follow these steps:
 You should now have the project set up and ready to use.
 
 ## Usage
-Examples and explanations on how to use the project.
+First download a model checkpoint (if you cloned the library they should already be present in the src/pulse_indexer/pretrained_models folder). Then the model can be used with just a few lines of code to extract the fiducial points from a cardiac pressure waveform:
+
+```python
+from pulse_indexer import PimPredictor
+checkpoint = 'augmented_model.pth'
+pim = PimPredictor(checkpoint=checkpoint)
+output = pim.predict(<your_waveform>, dt=1)
+```
+
+The output from PIM will be an numpy array containing the indices corresponding to the $t_i$ and $t_n$ points of the input waveform. See the examples on using the pulse-indexer model in the [notebooks](./notebooks/pim_predictor_example.ipynb).
+<p align="center">
+    <img src="./assets/wvf_label_1.png" alt="Waveform Label 1" width="45%">
+    <img src="./assets/wvf_label_2.png" alt="Waveform Label 2" width="45%">
+</p>
 
 ## Model Checkpoints
 
 Two model versions of the model are available for use:
 
-1. **Model Checkpoint with Augmented Data**: This version of the model has been trained using augmented data, which can help improve the model's robustness and performance on a wider range of inputs.
+1. **Model Checkpoint with Augmented Data**: "augmented_model.pth"
+This version of the model has been trained using augmented data, which can help improve the model's robustness and performance on a wider range of inputs.
 
-2. **Model Checkpoint without Augmented Data**: This version of the model has been trained without any data augmentation, providing a baseline performance on the original dataset.
-
-## Features
-List of features included in the project.
-
-## Contributing
-Guidelines for contributing to the project.
-
-## License
-Information about the project's license.
+2. **Model Checkpoint without Augmented Data**: "base_model.pth"
+This version of the model has been trained without any data augmentation, providing a baseline performance on the original dataset.
 
 ## Contact
-Contact information for the project maintainers.
+For any questions or inquiries, please contact the project maintainer:
+
+Alessio Tamborini  
+Email: [atambori@caltech.edu](mailto:atambori@caltech.edu)
+
+## Citing Pulse Indexer
+if you use PIM in your research, please use the following BibTex entry:
+```bibtex
+@misc{IndexFinderML,
+    author = {Alessio Tamborini, Arian Aghilinejad, Morteza Gharib},
+    title = {IndexFinderML: Machine Learning-Based Automated Cardiac Pressure Waveform Fiducial Point Detection},
+    year = {2025},
+    publisher = {GitHub},
+    journal = {GitHub repository},
+    howpublished = {\url{https://github.com/alessiotamborini/IndexFinderML}},
+}
+```

@@ -32,3 +32,4 @@ src/run_scripts/test_empirical/save
 src/pulse_indexer/__pycache__/
 
 notebooks/study_model_error.ipynb
+notebooks/aix_distribution.ipynb
