@@ -153,7 +153,7 @@ class Runner:
         trainer.test(model, datamodule=data_module)#, ckpt_path='best')
 
         # Save the model
-        model_save_path = '../../pulse_indexer/pretrained_models/best_model.pth'
+        model_save_path = '../../pulse_indexer/pretrained_models/base_model.pth'
         torch.save({
             'model_state_dict': model.state_dict(),
             'model_hyperparameters': self.model_hyperparameters

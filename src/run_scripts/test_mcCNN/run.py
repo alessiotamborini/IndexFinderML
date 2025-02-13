@@ -18,7 +18,7 @@ def main():
     parser.add_argument('--split_type', type=str, default='subid', help='Type of data split.')
     parser.add_argument('--num_workers', type=int, default=9, help='Number of workers for the dataloaders.')
     parser.add_argument('--train_proportion', type=float, default=1.0, help='The percentage of training set to use.')
-    parser.add_argument('--augment_train_data', type=bool, default=True, help='Whether to augment the training data.')
+    parser.add_argument('--augment_train_data', type=bool, default=False, help='Whether to augment the training data.')
     parser.add_argument('--augment_type', type=list, default=[True,False,True,False], help='Type of augmentation to apply to the data.')
     parser.add_argument('--augment_prob', type=float, default=[1,1,1,1], help='Probability of applying the augmentation.')
     # model hyperparameters
@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--activation_type', type=str, default='relu', help='Type of activation function to use.')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate for the optimizer.')
     parser.add_argument('--monitor_metric', type=str, default='loss/val/mse', help='Metric to monitor for early stopping.')
-    parser.add_argument('--special_test', type=str, default='optim', help='Special test to run.')
+    parser.add_argument('--special_test', type=str, default='base', help='Special test to run.')
     # training hyperparameters
     parser.add_argument('--max_epochs', type=int, default=200, help='Maximum number of epochs to train the model.')
     parser.add_argument('--gradient_clip_val', type=float, default=10.0, help='Value for gradient clipping.')
