@@ -56,9 +56,9 @@ class mcCNNModule(pl.LightningModule):
         return self.model(x)
     
     def custom_loss(self, y_hat, y):
-        base_loss = F.mse_loss(y_hat, y)
-        penalty = torch.mean(F.relu(y_hat[:,0] - y_hat[:,1])) # penality if y_hat[0] > y_hat[1]
-        loss = base_loss + penalty
+        base_loss = F.l1_loss(y_hat, y) # base_loss: MAE
+        penalty = torch.mean(F.relu(y_hat[:,0] - y_hat[:,1])) # penality: for y_hat[0] > y_hat[1]
+        loss = base_loss + penalty 
         return loss
 
     def training_step(self, batch, batch_idx):

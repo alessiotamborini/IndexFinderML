@@ -24,6 +24,9 @@ class Runner:
             num_workers: int = 1,
             train_proportion: float = 1.0,
             train_proportion_seed: int = None,
+            augment_train_data: bool = False,
+            augment_type: list = [False,False,False,False],
+            augment_prob: list = [1,1,1,1],
             # model hyperparameters
             input_dim: int = 3,
             output_dim: int = 2,
@@ -61,6 +64,9 @@ class Runner:
             'num_workers': num_workers,
             'train_proportion': train_proportion,
             'train_proportion_seed': train_proportion_seed,
+            'augment_train_data': augment_train_data,
+            'augment_type': augment_type,
+            'augment_prob': augment_prob,
         }
 
         self.model_hyperparameters = {

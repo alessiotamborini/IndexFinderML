@@ -18,6 +18,7 @@ def main():
     parser.add_argument('--num_workers', type=int, default=9, help='Number of workers for the dataloaders.')
     parser.add_argument('--channels_present', type=bool, default=False, help='Whether the data has channels.')
     parser.add_argument('--train_proportion', type=float, default=1.0, help='The percentage of training set to use.')
+    parser.add_argument('--augment_train_data', type=bool, default=False, help='Whether to augment the training data.')
     # model hyperparameters
     parser.add_argument('--input_modes', type=int, default=20, help='Input dimension of the data.')
     parser.add_argument('--output_dim', type=int, default=2, help='Output dimension of the data.')

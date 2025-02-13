@@ -24,6 +24,7 @@ class Runner:
             channels_present: bool = False,
             train_proportion: float = 1.0,
             train_proportion_seed: int = None,
+            augment_train_data: bool = False,
             # model hyperparameters
             input_modes: int = 20,
             output_dim: int = 2,
@@ -58,7 +59,8 @@ class Runner:
             'num_workers': num_workers,
             'channels_present': channels_present,
             'train_proportion': train_proportion,
-            'train_proportion_seed': train_proportion_seed
+            'train_proportion_seed': train_proportion_seed,
+            'augment_train_data': augment_train_data,
         }
 
         self.model_hyperparameters = {

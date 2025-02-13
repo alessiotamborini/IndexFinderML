@@ -22,7 +22,7 @@ def main():
     # model hyperparameters
     parser.add_argument('--input_dim', type=int, default=1, help='Input dimension of the data.')
     parser.add_argument('--output_dim', type=int, default=2, help='Output dimension of the data.')
-    parser.add_argument('--layer_dims', type=list, default=[8, 16, 32], help='Dimensions of the layers in the model.')
+    parser.add_argument('--layer_dims', type=list, default=[8, 16, 16], help='Dimensions of the layers in the model.')
     parser.add_argument('--kernel_dim', type=int, default=3, help='Kernel dimension for the convolutional layers.')
     parser.add_argument('--stride', type=int, default=1, help='Stride for the convolutional layers.')
     parser.add_argument('--padding', type=int, default=1, help='Padding for the convolutional layers.')
@@ -30,7 +30,7 @@ def main():
     parser.add_argument('--activation_type', type=str, default='relu', help='Type of activation function to use.')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate for the optimizer.')
     parser.add_argument('--monitor_metric', type=str, default='loss/val/mse', help='Metric to monitor for early stopping.')
-    parser.add_argument('--special_test', type=str, default=None, help='Special test to run.')
+    parser.add_argument('--special_test', type=str, default='base', help='Special test to run.')
     # training hyperparameters
     parser.add_argument('--max_epochs', type=int, default=100, help='Maximum number of epochs to train the model.')
     parser.add_argument('--gradient_clip_val', type=float, default=10.0, help='Value for gradient clipping.')

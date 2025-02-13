@@ -18,7 +18,7 @@ def main():
     parser.add_argument('--num_workers', type=int, default=9, help='Number of workers for the dataloaders.')
     parser.add_argument('--train_proportion', type=float, default=1.0, help='The percentage of training set to use.')
     # model hyperparameters
-    parser.add_argument('--special_test', type=str, default=None, help='Special test to run.')
+    parser.add_argument('--special_test', type=str, default='base', help='Special test to run.')
     # training hyperparameters
     # other hyperparameters
     
