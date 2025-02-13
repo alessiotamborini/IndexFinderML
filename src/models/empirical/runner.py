@@ -90,13 +90,6 @@ class Runner:
                 output *= len_
                 output = output.round(0).astype(int)
 
-                # if i_ind is not None and np.abs(output[0] - i_ind) > 250:
-                #     print(output[0], i_ind)
-                #     plt.plot(wvf)
-                #     plt.axvline(x=output[0], color='r')
-                #     plt.axvline(x=i_ind, color='g')
-                #     plt.show()
-
                 # store results
                 # print(f'Index: {idx}, Output: {output}, P1: {p1_ind}, P2: {p2_ind}, N: {n_ind}')
 
